@@ -71,10 +71,10 @@ return array(
         ),
     ),
 
-    'createUser'    => array('type' => 'CAuthItem::TYPE_OPERATION'),
-    'updateUser'    => array('type' => 'CAuthItem::TYPE_OPERATION'),
-    'deleteUser'    => array('type' => 'CAuthItem::TYPE_OPERATION'),
-    'readUser'      => array('type' => 'CAuthItem::TYPE_OPERATION'),
+    'createUser'    => array('type' => CAuthItem::TYPE_OPERATION),
+    'updateUser'    => array('type' => CAuthItem::TYPE_OPERATION),
+    'deleteUser'    => array('type' => CAuthItem::TYPE_OPERATION),
+    'readUser'      => array('type' => CAuthItem::TYPE_OPERATION),
 
 );
 ```

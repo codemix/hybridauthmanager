@@ -20,7 +20,12 @@ class HybridAuthmanager extends CPhpAuthManager
      * @var string the ID of the {@link CDbConnection} application component. Defaults to 'db'.
      * The database must have the tables as declared in "framework/web/auth/*.sql".
      */
-    public $connectionID='db';
+    public $connectionID = 'db';
+
+    /**
+     * @var string the ID of the cache application component. Defaults to 'cache'. Set to `null` to disable caching.
+     */
+    public $cacheID = 'cache';
 
     /**
      * @var string the name of the table storing authorization item assignments. Defaults to 'auth_assignment'.
@@ -287,10 +292,15 @@ class HybridAuthmanager extends CPhpAuthManager
      */
     protected function loadFromFile($file)
     {
-        $key = '__authfile_'.Yii::app()->id;
+        $app    = Yii::app();
+        $cache  = ($this->cacheID && $app->hasComponent($this->cacheID)) ? $app->getComponent($this->cacheID) : null;
 
-        if(($content = Yii::app()->cache->get($key))!==false) {
-            return $content;
+        if($cache) {
+            $key = '__authfile_'.Yii::app()->id;
+
+            if(($content = $cache->get($key))!==false) {
+                return $content;
+            }
         }
 
         if(!is_file($file)) {
@@ -312,7 +322,9 @@ class HybridAuthmanager extends CPhpAuthManager
             }
         }
 
-        Yii::app()->cache->set($key,$content, 3600, new CFileCacheDependency($file));
+        if($cache) {
+            $cache->set($key,$content, 3600, new CFileCacheDependency($file));
+        }
 
         return $content;
     }

@@ -79,5 +79,7 @@ return array(
 );
 ```
 
-Assignments will be saved in a DB table `auth_assignments` by default. You can change this
-with the `assignmentTable` property of the `authManager` component.
+The content of this file will be cached unless you set `cacheID` to `null`.
+
+The actual Role assignments will be saved in a DB table `auth_assignments` by default.
+You can change this name with the `assignmentTable` property of the `authManager` component.

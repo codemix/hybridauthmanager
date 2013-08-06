@@ -1,6 +1,6 @@
 <?php
 /**
- * HybridAuthmanager
+ * HybridAuthManager
  *
  * This class is a combination of CDbAuthManager and CPhpAuthManager:
  *
@@ -14,7 +14,7 @@
  * not loose the comments there, you should avoid to call any method
  * to create auth items or add child items - even though it's supported.
  */
-class HybridAuthmanager extends CPhpAuthManager
+class HybridAuthManager extends CPhpAuthManager
 {
     /**
      * @var string the ID of the {@link CDbConnection} application component. Defaults to 'db'.

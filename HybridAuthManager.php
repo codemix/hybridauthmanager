@@ -78,20 +78,6 @@ class HybridAuthManager extends CPhpAuthManager
     }
 
     /**
-     * Overrides the parent to allow closures to be used as well as strings.
-     *
-     * @inheritDoc
-     */
-    public function executeBizRule($bizRule, $params, $data)
-    {
-        if ($bizRule !== null && !is_string($bizRule) &&  is_callable($bizRule))
-            return $this->evaluateExpression($bizRule, array('params' => $params, 'data' => $data));
-        else
-            return parent::executeBizRule($bizRule, $params, $data);
-    }
-
-
-    /**
      * Assigns an authorization item to a user.
      * @param string $itemName the item name
      * @param mixed $userId the user ID (see {@link IWebUser::getId})

@@ -13,6 +13,8 @@
  * You can manage the authorization hierarchy in data/auth.php. To
  * not loose the comments there, you should avoid to call any method
  * to create auth items or add child items - even though it's supported.
+ *
+ * It also allows to cache auth assignments.
  */
 class HybridAuthManager extends CPhpAuthManager
 {
@@ -31,6 +33,24 @@ class HybridAuthManager extends CPhpAuthManager
      * @var string the name of the table storing authorization item assignments. Defaults to 'auth_assignment'.
      */
     public $assignmentTable='auth_assignment';
+
+    /**
+     * @var int|boolean number of seconds to cache auth assignments. Default is 0 which means, that
+     * authassignments are only cached during the current request. To completely disable caching
+     * set this property to false.
+     */
+    public $assignmentCachingDuration = 0;
+
+    /**
+     * @var int number of seconds to cache the content of the auth hierarchy file. Default is 3600.
+     * Set to 0 to disable caching
+     */
+    public $hierarchyCachingDuration = 3600;
+
+    /**
+     * @var array assignments indexed by user id
+     */
+    protected $_assignments = array();
 
     protected $_db;
     protected $_loading=false;
@@ -175,6 +195,20 @@ class HybridAuthManager extends CPhpAuthManager
      */
     public function getAuthAssignments($userId)
     {
+        $useCache = $this->assignmentCachingDuration!==false;
+
+        if($useCache) {
+            if(isset($this->_assignments[$userId])) {
+                return $this->_assignments[$userId];
+            } else {
+                $cacheKey = '__authassignments__'.$userId.'_'.Yii::app()->id;
+                $cache = Yii::app()->getComponent($this->cacheID);
+                if(($assignments = $cache->get($cacheKey))!==false) {
+                    return $this->_assignments[$userId] = $assignments;
+                }
+            }
+        }
+
         $rows = $this->getDbConnection()
             ->createCommand()
             ->select()
@@ -189,6 +223,13 @@ class HybridAuthManager extends CPhpAuthManager
                 $data = null;
             }
             $assignments[$row['itemname']] = new CAuthAssignment($this,$row['itemname'],$row['userid'],$row['bizrule'],$data);
+        }
+
+        if($useCache) {
+            $this->_assignments[$userId] = $assignments;
+            if($this->assignmentCachingDuration!==0) {
+                $cache->set($cacheKey, $assignments);
+            }
         }
         return $assignments;
     }
@@ -322,8 +363,8 @@ class HybridAuthManager extends CPhpAuthManager
             }
         }
 
-        if($cache) {
-            $cache->set($key,$content, 3600, new CFileCacheDependency($file));
+        if($cache && $this->hierarchyCachingDuration!==0) {
+            $cache->set($key,$content, $this->hierarchyCachingDuration, new CFileCacheDependency($file));
         }
 
         return $content;

@@ -83,3 +83,22 @@ The content of this file will be cached unless you set `cacheID` to `null`.
 
 The actual Role assignments will be saved in a DB table `auth_assignments` by default.
 You can change this name with the `assignmentTable` property of the `authManager` component.
+
+## Caching
+
+The component can cache the RBAC hierarchy and auth assignments. You can configure
+the cache component ID on `cacheID`.
+
+### Caching hierarchy
+
+By default the hierarchy file content is cache `3600` seconds. You can configure this
+through `hierarchyCachingDuration`.
+
+### Caching auth assigments
+
+You can set the number of seconds to cache auth assignments in `assignmentCachingDuration`.
+The assignments will be cached per user to avoid DB calls on each request. By default this
+is set to `0` which means, that assignments will only be cached throughout the current
+requests, i.e. on consecutive calls of `checkAccess()`.
+
+Set this property to `false` to completely disable caching.

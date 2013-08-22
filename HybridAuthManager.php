@@ -14,7 +14,7 @@
  * not loose the comments there, you should avoid to call any method
  * to create auth items or add child items - even though it's supported.
  *
- * It also allows to cache auth assignments.
+ * It also allows caching of auth assignments.
  */
 class HybridAuthManager extends CPhpAuthManager
 {
@@ -118,6 +118,7 @@ class HybridAuthManager extends CPhpAuthManager
                 'data'      => serialize($data)
             ));
 
+        $this->flushAssignmentCache($userId);
         return new CAuthAssignment($this,$itemName,$userId,$bizRule,$data);
     }
 
@@ -201,9 +202,9 @@ class HybridAuthManager extends CPhpAuthManager
             if(isset($this->_assignments[$userId])) {
                 return $this->_assignments[$userId];
             } else {
-                $cacheKey = '__authassignments__'.$userId.'_'.Yii::app()->id;
+                $cacheKey = $this->getAssignmentCacheKey($userId);
                 $cache = Yii::app()->getComponent($this->cacheID);
-                if(($assignments = $cache->get($cacheKey))!==false) {
+                if(!$cache || ($assignments = $cache->get($cacheKey))!==false) {
                     return $this->_assignments[$userId] = $assignments;
                 }
             }
@@ -227,11 +228,20 @@ class HybridAuthManager extends CPhpAuthManager
 
         if($useCache) {
             $this->_assignments[$userId] = $assignments;
-            if($this->assignmentCachingDuration!==0) {
+            if($cache && $this->assignmentCachingDuration!==0) {
                 $cache->set($cacheKey, $assignments);
             }
         }
         return $assignments;
+    }
+
+    /**
+     * @param mixed $userId the user ID (see {@link IWebUser::getId})
+     * @return string the cache key used to store auth assignments for this user
+     */
+    public function getAssignmentCacheKey($userId)
+    {
+        return '__authassignments__'.$userId.'_'.Yii::app()->id;
     }
 
     /**
@@ -240,6 +250,7 @@ class HybridAuthManager extends CPhpAuthManager
      */
     public function saveAuthAssignment($assignment)
     {
+        $userId = $assignment->getUserId();
         $this->getDbConnection()
             ->createCommand()
             ->update($this->assignmentTable,
@@ -250,9 +261,10 @@ class HybridAuthManager extends CPhpAuthManager
                 'itemname=:itemname AND userid=:userid',
                 array(
                     'itemname'  => $assignment->getItemName(),
-                    'userid'    => $assignment->getUserId(),
+                    'userid'    => $userId,
                 )
             );
+        $this->flushAssignmentCache($userId);
     }
 
     /**
@@ -294,6 +306,22 @@ class HybridAuthManager extends CPhpAuthManager
         // Hack: prevent auth assignments to be cleared during init
         if(!$this->_loading) {
             $this->getDbConnection()->createCommand()->delete($this->assignmentTable);
+        }
+    }
+
+    /**
+     * Flush assignments for specified user from cache
+     *
+     * @param mixed $userId the user ID (see {@link IWebUser::getId})
+     */
+    public function flushAssignmentCache($userId)
+    {
+        if($this->assignmentCachingDuration===false) {
+            return;
+        }
+
+        if($cache = Yii::app()->getComponent($this->cacheID)) {
+            $cache->delete($this->getAssignmentCacheKey($userId));
         }
     }
 
